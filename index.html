@@ -3,29 +3,287 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard Radiologi RS Mitra Plumbon</title>
+  <title>Dashboard Radiologi - RS Mitra Plumbon Cirebon</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
 
   <!-- Header -->
   <header class="bg-blue-800 text-white shadow p-4">
-    <h1 class="text-2xl font-bold">Instalasi Radiologi</h1>
-    <p class="text-sm">Dashboard Utilisasi & Re-Expertise</p>
+    <h1 class="text-2xl font-bold">Instalasi Radiologi RS Mitra Plumbon Cirebon</h1>
+    <p class="text-sm">Dashboard Utilisasi & Re-Expertise Pasien Rawat Inap</p>
   </header>
 
-  <!-- Menu Navigasi -->
-  <main class="p-6 grid gap-4">
-    <a href="form.html" class="bg-indigo-600 text-white p-4 rounded-xl shadow block text-center">
-      📑 Form Permohonan Re-Expertise
-    </a>
-    <a href="grafik.html" class="bg-green-600 text-white p-4 rounded-xl shadow block text-center">
-      📊 Grafik Utilisasi Pemeriksaan
-    </a>
-    <a href="tabel.html" class="bg-blue-600 text-white p-4 rounded-xl shadow block text-center">
-      📋 Tabel Detail & Daftar Re-Expertise
-    </a>
+  <!-- Tombol Form -->
+  <div class="p-6">
+    <button onclick="toggleForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow">
+      📑 Permohonan Re-Expertise Pasien Rawat Inap
+    </button>
+  </div>
+
+  <!-- Form Input -->
+  <div id="formRe" class="hidden p-6">
+    <div class="bg-white rounded-2xl shadow-md p-6 max-w-xl">
+      <h2 class="text-xl font-semibold mb-4">Input Permohonan Re-Expertise</h2>
+      <form id="reForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium">Tanggal & Jam</label>
+          <input type="text" id="tanggal" class="w-full border rounded-lg p-2 bg-gray-100" readonly>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Nama Pasien</label>
+          <input type="text" id="namaPasien" class="w-full border rounded-lg p-2" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">No Rekam Medis</label>
+          <input type="text" id="noRM" class="w-full border rounded-lg p-2" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Asal Ranap</label>
+          <input type="text" id="asalRanap" class="w-full border rounded-lg p-2" placeholder="Contoh: ICU, Interna, Bedah" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Permohonan Re-Expertise</label>
+          <textarea id="permohonan" class="w-full border rounded-lg p-2" required></textarea>
+        </div>
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl shadow">
+          ✅ Simpan Permohonan
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Filter + Grafik Utilisasi -->
+  <main class="p-6">
+
+    <!-- Filter -->
+    <div class="bg-white rounded-2xl shadow-md p-4 mb-6 flex flex-col md:flex-row gap-4">
+      <div>
+        <label for="filterJenis" class="block text-sm font-medium mb-1">Jenis Pemeriksaan</label>
+        <select id="filterJenis" class="border rounded-lg p-2 w-48">
+          <option value="all">Semua</option>
+          <option value="Rontgen">Rontgen</option>
+          <option value="CT-Scan">CT-Scan</option>
+          <option value="MRI">MRI</option>
+          <option value="USG Abdomen">USG Abdomen</option>
+          <option value="USG Obgyn & Urologi">USG Obgyn & Urologi</option>
+          <option value="Echo Cardiografi">Echo Cardiografi</option>
+          <option value="C-Arm">C-Arm</option>
+          <option value="C-Arm Angiography">C-Arm Angiography</option>
+        </select>
+      </div>
+      <div>
+        <label for="filterBulan" class="block text-sm font-medium mb-1">Bulan</label>
+        <select id="filterBulan" class="border rounded-lg p-2 w-40">
+          <option value="all">Semua</option>
+          <option value="Jan">Januari</option>
+          <option value="Feb">Februari</option>
+          <option value="Mar">Maret</option>
+          <option value="Apr">April</option>
+          <option value="Mei">Mei</option>
+          <option value="Jun">Juni</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Grafik Utilisasi -->
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Grafik Utilisasi Pemeriksaan (Jan - Jun 2025)</h2>
+      <canvas id="utilisasiChart" height="100"></canvas>
+    </div>
+
+    <!-- Tabel Utilisasi -->
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6 overflow-x-auto">
+      <h2 class="text-xl font-semibold mb-4">Tabel Detail Utilisasi Pemeriksaan (Jan - Jun 2025)</h2>
+      <table id="utilisasiTable" class="w-full border-collapse border border-gray-300 text-sm">
+        <thead class="bg-blue-100">
+          <tr>
+            <th class="border border-gray-300 p-2">Pemeriksaan</th>
+            <th class="border border-gray-300 p-2">Jan</th>
+            <th class="border border-gray-300 p-2">Feb</th>
+            <th class="border border-gray-300 p-2">Mar</th>
+            <th class="border border-gray-300 p-2">Apr</th>
+            <th class="border border-gray-300 p-2">Mei</th>
+            <th class="border border-gray-300 p-2">Jun</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Tabel Re-Expertise -->
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6 overflow-x-auto">
+      <h2 class="text-xl font-semibold mb-4">Daftar Permohonan Re-Expertise Pasien Rawat Inap</h2>
+      <table class="w-full border-collapse border border-gray-300 text-sm" id="reTable">
+        <thead class="bg-blue-100">
+          <tr>
+            <th class="border p-2">Tanggal & Jam</th>
+            <th class="border p-2">Nama Pasien</th>
+            <th class="border p-2">No RM</th>
+            <th class="border p-2">Asal Ranap</th>
+            <th class="border p-2">Permohonan</th>
+            <th class="border p-2">Status Aksi</th>
+            <th class="border p-2">Update Status</th>
+          </tr>
+        </thead>
+        <tbody id="reTableBody"></tbody>
+      </table>
+    </div>
+
   </main>
 
+  <script>
+    /* ---------------- UTILISASI ---------------- */
+    const dataUtilisasi = {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
+      datasets: [
+        { label: 'Rontgen', data: [5226, 4983, 4471, 5349, 4856, 4350] },
+        { label: 'CT-Scan', data: [503, 441, 440, 507, 485, 506] },
+        { label: 'MRI', data: [183, 160, 115, 146, 155, 143] },
+        { label: 'USG Abdomen', data: [730, 700, 578, 705, 771, 647] },
+        { label: 'USG Obgyn & Urologi', data: [957, 901, 973, 1236, 1131, 985] },
+        { label: 'Echo Cardiografi', data: [362, 393, 320, 317, 456, 366] },
+        { label: 'C-Arm', data: [40, 40, 37, 48, 54, 37] },
+        { label: 'C-Arm Angiography', data: [15, 8, 19, 18, 12, 15] }
+      ]
+    };
+
+    const colors = [
+      'rgb(59,130,246)', 'rgb(34,197,94)', 'rgb(239,68,68)', 'rgb(245,158,11)',
+      'rgb(139,92,246)', 'rgb(16,185,129)', 'rgb(251,191,36)', 'rgb(107,114,128)'
+    ];
+
+    const ctx = document.getElementById('utilisasiChart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dataUtilisasi.labels,
+        datasets: dataUtilisasi.datasets.map((d, i) => ({
+          label: d.label,
+          data: d.data,
+          borderColor: colors[i],
+          backgroundColor: colors[i].replace('rgb', 'rgba').replace(')', ',0.2)'),
+          fill: true,
+          tension: 0.3
+        }))
+      },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    const tableBody = document.getElementById('tableBody');
+    function renderTable(filterJenis, filterBulan) {
+      tableBody.innerHTML = '';
+      dataUtilisasi.datasets.forEach((d) => {
+        if (filterJenis !== 'all' && d.label !== filterJenis) return;
+        let row = `
+          <tr class="hover:bg-gray-50">
+            <td class="border p-2 font-medium">${d.label}</td>
+        `;
+        dataUtilisasi.labels.forEach((bulan, i) => {
+          const hidden = (filterBulan !== 'all' && filterBulan !== bulan) ? 'hidden' : '';
+          row += `<td class="border p-2 ${hidden}">${d.data[i]}</td>`;
+        });
+        row += `</tr>`;
+        tableBody.innerHTML += row;
+      });
+    }
+
+    const filterJenis = document.getElementById('filterJenis');
+    const filterBulan = document.getElementById('filterBulan');
+    function updateView() {
+      const jenis = filterJenis.value;
+      const bulan = filterBulan.value;
+      const dsFiltered = dataUtilisasi.datasets
+        .filter(d => jenis === 'all' || d.label === jenis)
+        .map((d) => {
+          const color = colors[dataUtilisasi.datasets.findIndex(x => x.label === d.label)];
+          return {
+            label: d.label,
+            data: d.data,
+            borderColor: color,
+            backgroundColor: color.replace('rgb', 'rgba').replace(')', ',0.2)'),
+            fill: true,
+            tension: 0.3
+          };
+        });
+      chart.data.datasets = dsFiltered;
+      chart.data.labels = bulan === 'all' ? dataUtilisasi.labels : [bulan];
+      chart.update();
+      renderTable(jenis, bulan);
+    }
+    filterJenis.addEventListener('change', updateView);
+    filterBulan.addEventListener('change', updateView);
+    renderTable('all', 'all');
+
+    /* ---------------- FORM RE-EXPERTISE ---------------- */
+    function toggleForm() {
+      document.getElementById('formRe').classList.toggle('hidden');
+      document.getElementById('tanggal').value = new Date().toLocaleString();
+    }
+
+    /* ---------------- FIREBASE CONFIG ---------------- */
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://radiologi-mpc-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const reForm = document.getElementById('reForm');
+    const reTableBody = document.getElementById('reTableBody');
+
+    reForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const tanggal = document.getElementById('tanggal').value;
+      const namaPasien = document.getElementById('namaPasien').value;
+      const noRM = document.getElementById('noRM').value;
+      const asalRanap = document.getElementById('asalRanap').value;
+      const permohonan = document.getElementById('permohonan').value;
+      db.ref("re_expertise").push({
+        tanggal, namaPasien, noRM, asalRanap, permohonan, status: "Menunggu"
+      });
+      reForm.reset();
+      document.getElementById('tanggal').value = new Date().toLocaleString();
+    });
+
+    // Realtime listener
+    db.ref("re_expertise").on("value", snapshot => {
+      reTableBody.innerHTML = "";
+      snapshot.forEach(child => {
+        const data = child.val();
+        const row = document.createElement("tr");
+        row.classList.add("hover:bg-gray-50");
+        row.innerHTML = `
+          <td class="border p-2">${data.tanggal}</td>
+          <td class="border p-2">${data.namaPasien}</td>
+          <td class="border p-2">${data.noRM}</td>
+          <td class="border p-2">${data.asalRanap || '-'}</td>
+          <td class="border p-2">${data.permohonan}</td>
+          <td class="border p-2 status">${data.status}</td>
+          <td class="border p-2">
+            ${data.status === "Menunggu"
+              ? `<button class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded" onclick="updateStatus('${child.key}')">Selesai</button>`
+              : "✅ Selesai Re-Expertise"}
+          </td>
+        `;
+        reTableBody.appendChild(row);
+      });
+    });
+
+    // Update status
+    function updateStatus(key) {
+      db.ref("re_expertise/" + key).update({ status: "✅ Selesai Re-Expertise" });
+    }
+  </script>
 </body>
 </html>
