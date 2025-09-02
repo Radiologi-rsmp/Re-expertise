@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard Radiologi - RS Mitra Plumbon Cirebon</title>
+  <title>Dashboard Radiologi - RS Mitra Plumbon</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -13,22 +13,28 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
+  <!-- Navbar -->
+  <nav class="bg-blue-900 text-white shadow p-3 flex flex-wrap gap-3">
+    <a href="#formRe" class="bg-blue-700 hover:bg-blue-600 px-3 py-2 rounded-lg font-semibold">📝 Tools Permohonan Re-Expertise</a>
+    <a href="https://radiologi-rsmp.github.io/Dhasboard-jadwal-dinas/" target="_blank" class="bg-blue-700 hover:bg-blue-600 px-3 py-2 rounded-lg font-semibold">📊 Dashboard Jadwal Dinas</a>
+  </nav>
+
   <!-- Header -->
-  <header class="bg-blue-800 text-white shadow p-4">
+  <header class="bg-blue-800 text-white shadow p-6 text-center">
     <h1 class="text-2xl font-bold">Instalasi Radiologi RS Mitra Plumbon Cirebon</h1>
     <p class="text-sm">Dashboard Utilisasi & Re-Expertise Pasien Rawat Inap</p>
   </header>
 
   <!-- Tombol Form -->
-  <div class="p-6">
-    <button onclick="toggleForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl shadow">
-      📑 Permohonan Re-Expertise Pasien Rawat Inap
+  <div class="p-6 text-center">
+    <button onclick="toggleForm()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl shadow">
+      📑 Buat Permohonan Re-Expertise
     </button>
   </div>
 
   <!-- Form Input -->
-  <div id="formRe" class="hidden p-6">
-    <div class="bg-white rounded-2xl shadow-md p-6 max-w-xl">
+  <div id="formRe" class="hidden p-6 flex justify-center">
+    <div class="bg-white rounded-2xl shadow-md p-6 w-full max-w-xl">
       <h2 class="text-xl font-semibold mb-4">Input Permohonan Re-Expertise</h2>
       <form id="reForm" class="space-y-4">
         <div>
@@ -122,7 +128,12 @@
 
   </main>
 
-  <!-- Script -->
+  <!-- Footer -->
+  <footer class="bg-blue-900 text-white text-center p-4 text-sm">
+    © 2025 Instalasi Radiologi RS Mitra Plumbon | Internal Use Only
+  </footer>
+
+  <!-- Script (Chart.js + Firebase + Logic) -->
   <script>
     /* ---------------- UTILISASI ---------------- */
     const dataUtilisasi = {
@@ -223,8 +234,6 @@
     const db = firebase.database();
 
     const reForm = document.getElementById('reForm');
-    const reTableBody = document.getElementById('reTableBody');
-
     reForm.addEventListener('submit', function(e) {
       e.preventDefault();
       const tanggal = document.getElementById('tanggal').value;
@@ -238,35 +247,6 @@
       reForm.reset();
       document.getElementById('tanggal').value = new Date().toLocaleString();
     });
-
-    // Realtime listener
-    db.ref("re_expertise").on("value", snapshot => {
-      reTableBody.innerHTML = "";
-      snapshot.forEach(child => {
-        const data = child.val();
-        const row = document.createElement("tr");
-        row.classList.add("hover:bg-gray-50");
-        row.innerHTML = `
-          <td class="border p-2">${data.tanggal}</td>
-          <td class="border p-2">${data.namaPasien}</td>
-          <td class="border p-2">${data.noRM}</td>
-          <td class="border p-2">${data.asalRanap || '-'}</td>
-          <td class="border p-2">${data.permohonan}</td>
-          <td class="border p-2 status">${data.status}</td>
-          <td class="border p-2">
-            ${data.status === "Menunggu"
-              ? `<button class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded" onclick="updateStatus('${child.key}')">Selesai</button>`
-              : "✅ Selesai Re-Expertise"}
-          </td>
-        `;
-        reTableBody.appendChild(row);
-      });
-    });
-
-    // Update status
-    function updateStatus(key) {
-      db.ref("re_expertise/" + key).update({ status: "✅ Selesai Re-Expertise" });
-    }
   </script>
 </body>
 </html>
