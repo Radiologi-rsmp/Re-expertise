@@ -58,27 +58,6 @@
     </div>
   </div>
 
-  <!-- 📋 Tabel Permohonan Re-Expertise -->
-  <div class="p-6">
-    <div class="bg-white rounded-2xl shadow-md p-6 mb-6 overflow-x-auto">
-      <h2 class="text-xl font-semibold mb-4">Daftar Permohonan Re-Expertise</h2>
-      <table class="w-full border-collapse border border-gray-300 text-sm">
-        <thead class="bg-blue-100">
-          <tr>
-            <th class="border border-gray-300 p-2">Tanggal & Jam</th>
-            <th class="border border-gray-300 p-2">Nama Pasien</th>
-            <th class="border border-gray-300 p-2">No. RM</th>
-            <th class="border border-gray-300 p-2">Asal Ranap</th>
-            <th class="border border-gray-300 p-2">Permohonan</th>
-            <th class="border border-gray-300 p-2">Status</th>
-            <th class="border border-gray-300 p-2">Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="reTableBody"></tbody>
-      </table>
-    </div>
-  </div>
-
   <!-- Filter + Grafik Utilisasi -->
   <main class="p-6">
 
@@ -95,7 +74,7 @@
           <option value="USG Obgyn & Urologi">USG Obgyn & Urologi</option>
           <option value="Echo Cardiografi">Echo Cardiografi</option>
           <option value="C-Arm">C-Arm</option>
-          <option value="C-Arm Angiography">C-Arm Angiography</option>
+          <option value="Cathlab">Cathlab</option>
         </select>
       </div>
       <div>
@@ -110,19 +89,20 @@
           <option value="Jun">Juni</option>
           <option value="Jul">Juli</option>
           <option value="Agu">Agustus</option>
+          <option value="Sep">September</option>
         </select>
       </div>
     </div>
 
     <!-- Grafik Utilisasi -->
     <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
-      <h2 class="text-xl font-semibold mb-4">Grafik Utilisasi Pemeriksaan (Jan - Agu 2025)</h2>
+      <h2 class="text-xl font-semibold mb-4">Grafik Utilisasi Pemeriksaan (Jan - Sep 2025)</h2>
       <canvas id="utilisasiChart" height="100"></canvas>
     </div>
 
     <!-- Tabel Utilisasi -->
     <div class="bg-white rounded-2xl shadow-md p-6 mb-6 overflow-x-auto">
-      <h2 class="text-xl font-semibold mb-4">Tabel Detail Utilisasi Pemeriksaan (Jan - Agu 2025)</h2>
+      <h2 class="text-xl font-semibold mb-4">Tabel Detail Utilisasi Pemeriksaan (Jan - Sep 2025)</h2>
       <table id="utilisasiTable" class="w-full border-collapse border border-gray-300 text-sm">
         <thead class="bg-blue-100">
           <tr>
@@ -135,28 +115,47 @@
             <th class="border border-gray-300 p-2">Jun</th>
             <th class="border border-gray-300 p-2">Jul</th>
             <th class="border border-gray-300 p-2">Agu</th>
+            <th class="border border-gray-300 p-2">Sep</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
 
+    <!-- Tabel Re-Expertise -->
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6 overflow-x-auto">
+      <h2 class="text-xl font-semibold mb-4">Daftar Permohonan Re-Expertise Pasien Rawat Inap</h2>
+      <table class="w-full border-collapse border border-gray-300 text-sm" id="reTable">
+        <thead class="bg-blue-100">
+          <tr>
+            <th class="border p-2">Tanggal & Jam</th>
+            <th class="border p-2">Nama Pasien</th>
+            <th class="border p-2">No RM</th>
+            <th class="border p-2">Asal Ranap</th>
+            <th class="border p-2">Permohonan</th>
+            <th class="border p-2">Status Aksi</th>
+            <th class="border p-2">Update Status</th>
+          </tr>
+        </thead>
+        <tbody id="reTableBody"></tbody>
+      </table>
+    </div>
+
   </main>
 
-  <!-- Script -->
   <script>
     /* ---------------- UTILISASI ---------------- */
     const dataUtilisasi = {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu'],
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep'],
       datasets: [
-        { label: 'Rontgen', data: [5226, 4983, 4471, 5349, 4856, 4350, 5152, 5231] },
-        { label: 'CT-Scan', data: [503, 441, 440, 507, 485, 506, 551, 557] },
-        { label: 'MRI', data: [183, 160, 115, 146, 155, 143, 185, 192] },
-        { label: 'USG Abdomen', data: [730, 700, 578, 705, 771, 647, 857, 778] },
-        { label: 'USG Obgyn & Urologi', data: [957, 901, 973, 1236, 1131, 985, 1109, 1046] },
-        { label: 'Echo Cardiografi', data: [362, 393, 320, 317, 456, 366, 347, 372] },
-        { label: 'C-Arm', data: [40, 40, 37, 48, 54, 37, 42, 46] },
-        { label: 'C-Arm Angiography', data: [15, 8, 19, 18, 12, 15, 16, 21] }
+        { label: 'Rontgen', data: [5226, 4983, 4471, 5349, 4856, 4350, 5152, 5231, 5436] },
+        { label: 'CT-Scan', data: [503, 441, 440, 507, 485, 506, 551, 557, 582] },
+        { label: 'MRI', data: [183, 160, 115, 146, 155, 143, 185, 192, 183] },
+        { label: 'USG Abdomen', data: [730, 700, 578, 705, 771, 647, 857, 778, 1004] },
+        { label: 'USG Obgyn & Urologi', data: [957, 901, 973, 1236, 1131, 985, 1109, 1046, 1189] },
+        { label: 'Echo Cardiografi', data: [362, 393, 320, 317, 456, 366, 347, 372, 395] },
+        { label: 'C-Arm', data: [40, 40, 37, 48, 54, 37, 42, 46, 35] },
+        { label: 'Cathlab', data: [15, 8, 19, 18, 12, 15, 16, 21, 25] }
       ]
     };
 
